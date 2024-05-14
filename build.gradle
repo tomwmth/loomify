@@ -1,0 +1,77 @@
+plugins {
+    id "fabric-loom" version "1.6-SNAPSHOT"
+}
+
+group = "me.yourname"
+version = "1.0.0"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "ParchmentMC"
+        url = "https://maven.parchmentmc.org/"
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.layered {
+        officialMojangMappings()
+//        mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+        parchment "org.parchmentmc.data:parchment-${project.parchment_mappings}@zip"
+    }
+    // Used by Minecraft as a transitive dependency of Guava, not imported by Loom for some reason
+    compileOnly "com.google.code.findbugs:jsr305:3.0.2"
+}
+
+configurations {
+    configureEach {
+        // We don't need the Minecraft dependency as we will be using the source
+        exclude group: "net.minecraft", module: "minecraft-merged"
+    }
+}
+
+tasks.register("setup") {
+    group = "loomify"
+    def task = tasks.genSourcesWithVineflower
+    task.configure {
+
+    }
+    dependsOn task
+    doLast {
+        // We don't want to create a dependency on Fabric Loader
+        var strip = [
+                "net.fabricmc.api.EnvType",
+                "net.fabricmc.api.Environment",
+                "@Environment"
+        ]
+
+        var sourcesJar = task.getOutputJar().asFile.get()
+        var outputDir = file("${project.rootDir}/src/main/java")
+        delete outputDir
+        mkdir outputDir
+
+        copy {
+            from(zipTree(sourcesJar))
+            into(outputDir)
+            filter {
+                line -> {
+                    for (toStrip in strip) {
+                        if (line.contains(toStrip))
+                            return null
+                    }
+                    return line
+                }
+            }
+        }
+    }
+}
