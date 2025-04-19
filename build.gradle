@@ -1,5 +1,5 @@
 plugins {
-    id "fabric-loom" version "1.6-SNAPSHOT"
+    id "fabric-loom" version "1.10-SNAPSHOT"
 }
 
 group = "me.yourname"
@@ -43,9 +43,6 @@ configurations {
 tasks.register("setup") {
     group = "loomify"
     def task = tasks.genSourcesWithVineflower
-    task.configure {
-
-    }
     dependsOn task
     doLast {
         // We don't want to create a dependency on Fabric Loader
@@ -55,7 +52,7 @@ tasks.register("setup") {
                 "@Environment"
         ]
 
-        var sourcesJar = task.getOutputJar().asFile.get()
+        var sourcesJar = task.getSourcesOutputJar().asFile.get()
         var outputDir = file("${project.rootDir}/src/main/java")
         delete outputDir
         mkdir outputDir
